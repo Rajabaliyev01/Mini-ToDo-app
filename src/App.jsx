@@ -14,8 +14,6 @@ import {
   doc,
   updateDoc,
   onSnapshot,
-  query,
-  where,
   serverTimestamp
 } from 'firebase/firestore';
 import './App.css';
@@ -103,7 +101,7 @@ const triggerConfetti = () => {
   }
 };
 
-// Web Audio API orqali chiroyli ovoz
+// Web Audio API orqali ovoz
 const playChime = () => {
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -165,11 +163,11 @@ function App() {
     return stored;
   });
 
-  // Hozirgi faol User ID (Agar login qilgan bo'lsa o'ziniki, bo'lmasa unikal guestId)
   const activeUserId = currentUser ? currentUser.uid : guestId;
 
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
 
   // Form maydonlari
   const [newTodo, setNewTodo] = useState('');
@@ -191,8 +189,8 @@ function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Fokus / Sekundnomer & Pomodoro holati
-  const [focusTask, setFocusTask] = useState(null); // { id, text, timeSpent }
-  const [timerMode, setTimerMode] = useState('stopwatch'); // 'stopwatch' yoki 'pomodoro'
+  const [focusTask, setFocusTask] = useState(null);
+  const [timerMode, setTimerMode] = useState('stopwatch');
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const timerRef = useRef(null);
@@ -206,6 +204,8 @@ function App() {
     });
   });
 
+  const [todayIsoStr] = useState(() => new Date().toISOString().split('T')[0]);
+
   // Mavzuni ulash
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -216,7 +216,7 @@ function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Auth kuzatish (Login / Logout)
+  // Auth kuzatish
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
@@ -230,7 +230,7 @@ function App() {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
       console.error('Google bilan kirishda xatolik:', err);
-      alert('Google bilan kirishda xatolik: ' + err.message);
+      alert('Google bilan kirish uchun Firebase Console-da Google Authentication-ni yoqishingiz kerak:\n' + err.message);
     }
   };
 
@@ -243,34 +243,40 @@ function App() {
     }
   };
 
-  // 1. Real-time Firebase Listener (Foydalanuvchi ID bo'yicha filter)
+  // 1. Real-time Firebase Listener
+  // Barcha vazifalarni oladi va foydalanuvchiga moslarini ko'rsatadi
   useEffect(() => {
-    const q = query(
-      collection(db, 'todos'),
-      where('userId', '==', activeUserId)
-    );
-
+    const todosCol = collection(db, 'todos');
     const unsubscribe = onSnapshot(
-      q,
+      todosCol,
       snapshot => {
         const list = snapshot.docs.map(docSnap => ({
           id: docSnap.id,
           ...docSnap.data()
         }));
 
-        // In-memory tartiblash (Kompozit indeks xatosini oldini olish uchun)
-        list.sort((a, b) => {
+        // Foydalanuvchining o'z vazifalari + userId si bo'lmagan eski vazifalar
+        const userTodos = list.filter(t => !t.userId || t.userId === activeUserId);
+
+        // Sanasi bo'yicha saralash
+        userTodos.sort((a, b) => {
           const timeA = a.createdAt?.seconds || 0;
           const timeB = b.createdAt?.seconds || 0;
           return timeB - timeA;
         });
 
-        setTodos(list);
+        setTodos(userTodos);
         setLoading(false);
+        setDbError(null);
       },
       error => {
         console.error('Firestore xatosi:', error);
         setLoading(false);
+        if (error.message && error.message.includes('permission-denied')) {
+          setDbError('Firebase Firestore bazasi hali yoqilmagan yoki qoidalar bloklangan. Iltimos Firebase konsolida bazani faollashtiring.');
+        } else {
+          setDbError(error.message);
+        }
       }
     );
 
@@ -354,6 +360,7 @@ function App() {
       });
     } catch (error) {
       console.error("Qo'shishda xatolik:", error);
+      alert("Vazifa qo'shishda xatolik yuz berdi: " + error.message);
     }
   };
 
@@ -419,10 +426,7 @@ function App() {
     }
   };
 
-  // Bugungi ISO sana (masalan: 2026-10-30)
-  const [todayIsoStr] = useState(() => new Date().toISOString().split('T')[0]);
-
-  // Muddatni tekshirish (overdue / today)
+  // Muddatni tekshirish
   const getDeadlineStatus = deadlineStr => {
     if (!deadlineStr) return null;
     if (deadlineStr < todayIsoStr) return { label: '⚠️ Muddati oʻtgan', type: 'overdue' };
@@ -461,7 +465,7 @@ function App() {
   return (
     <div className="app-wrapper">
       <div className="todo-card">
-        {/* Foydalanuvchi Boshqaruv Paneli (User Profile & ID) */}
+        {/* Foydalanuvchi Boshqaruv Paneli */}
         <div className="user-bar">
           <div className="user-info">
             <div className="user-avatar">
@@ -498,7 +502,23 @@ function App() {
           </div>
         </div>
 
-        {/* Yuqori Panel: Sarlavha va Rejim tugmalari */}
+        {/* Xatolik ogohlantirishi (agar baza yoqilmagan bo'lsa) */}
+        {dbError && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid #ef4444',
+            color: '#f87171',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            fontSize: '13px',
+            marginBottom: '20px',
+            lineHeight: '1.4'
+          }}>
+            ⚠️ <b>Diqqat:</b> {dbError}
+          </div>
+        )}
+
+        {/* Yuqori Panel */}
         <header className="header-top">
           <div className="header-title-box">
             <h1>
@@ -525,7 +545,7 @@ function App() {
           </div>
         </header>
 
-        {/* KREATIV QISM: Fokus Sekundnomeri va Pomodoro Taymeri */}
+        {/* Fokus Sekundnomeri va Pomodoro */}
         {focusTask && (
           <div className="timer-widget">
             <div className="timer-header">
@@ -582,7 +602,7 @@ function App() {
           </div>
         )}
 
-        {/* Progress & Statistika kartasi */}
+        {/* Progress & Statistika */}
         <div className="stats-banner">
           <div className="stats-info">
             <div>
@@ -596,7 +616,7 @@ function App() {
           </div>
         </div>
 
-        {/* Yangi vazifa qo'shish formasi */}
+        {/* Yangi vazifa formasi */}
         <form onSubmit={addTodo} className="todo-form">
           <div className="form-input-row">
             <input
