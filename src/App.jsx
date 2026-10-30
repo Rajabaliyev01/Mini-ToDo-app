@@ -1,5 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
-import { db } from './firebase';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  db,
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from './firebase';
 import {
   collection,
   addDoc,
@@ -8,12 +15,12 @@ import {
   updateDoc,
   onSnapshot,
   query,
-  orderBy,
+  where,
   serverTimestamp
 } from 'firebase/firestore';
 import './App.css';
 
-// Kategoriya konfiguratsiyasi
+// Kategoriyalar
 const CATEGORIES = {
   all: { label: 'Barchasi', icon: '🌟', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },
   work: { label: 'Ish', icon: '💼', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },
@@ -48,11 +55,11 @@ const triggerConfetti = () => {
     canvas.height = window.innerHeight;
 
     const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
-    const particles = Array.from({ length: 60 }, () => ({
+    const particles = Array.from({ length: 70 }, () => ({
       x: canvas.width / 2,
       y: canvas.height * 0.45,
-      vx: (Math.random() - 0.5) * 14,
-      vy: (Math.random() - 0.8) * 14,
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.85) * 16,
       size: Math.random() * 8 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
       alpha: 1,
@@ -67,7 +74,7 @@ const triggerConfetti = () => {
       particles.forEach(p => {
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.35; // gravitatsiya
+        p.vy += 0.35;
         p.alpha -= 0.015;
         p.rotation += p.vRot;
 
@@ -91,12 +98,12 @@ const triggerConfetti = () => {
       }
     };
     render();
-  } catch (e) {
-    console.error(e);
+  } catch {
+    // Canvas xatolarini e'tiborsiz qoldirish
   }
 };
 
-// Web Audio API orqali zavqli ovoz chiqarish (hech qanday tashqi audio fayl kerak emas)
+// Web Audio API orqali chiroyli ovoz
 const playChime = () => {
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -106,21 +113,61 @@ const playChime = () => {
     const gain = ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-    osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15); // G5
+    osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.15);
     gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.3);
+    osc.stop(ctx.currentTime + 0.35);
   } catch {
-    // Brauzer ovoz siyosatiga tushsa e'tiborsiz qoldiramiz
+    // Brauzer ovoz siyosatiga tushsa
   }
 };
 
+// Vaqtni formatlash (soniyalarni mm:ss yoki hh:mm:ss ga)
+const formatSeconds = sec => {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) {
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
+// Bajarilish davomiyligini hisoblash
+const getCompletionDuration = (created, completed) => {
+  if (!created || !completed) return null;
+  const start = created.seconds ? created.seconds * 1000 : new Date(created).getTime();
+  const end = completed.seconds ? completed.seconds * 1000 : new Date(completed).getTime();
+  const diffMinutes = Math.round((end - start) / (1000 * 60));
+
+  if (diffMinutes < 1) return '⚡ 1 daqiqadan kam vaqtda';
+  if (diffMinutes < 60) return `⏱️ ${diffMinutes} daqiqada`;
+  const hours = Math.floor(diffMinutes / 60);
+  if (hours < 24) return `⏱️ ${hours} soatda`;
+  const days = Math.floor(hours / 24);
+  return `📅 ${days} kunda`;
+};
+
 function App() {
+  // Foydalanuvchi va Auth holati
+  const [currentUser, setCurrentUser] = useState(null);
+  const [guestId] = useState(() => {
+    let stored = localStorage.getItem('guest_user_id');
+    if (!stored) {
+      stored = 'guest_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('guest_user_id', stored);
+    }
+    return stored;
+  });
+
+  // Hozirgi faol User ID (Agar login qilgan bo'lsa o'ziniki, bo'lmasa unikal guestId)
+  const activeUserId = currentUser ? currentUser.uid : guestId;
+
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -128,9 +175,10 @@ function App() {
   const [newTodo, setNewTodo] = useState('');
   const [category, setCategory] = useState('work');
   const [priority, setPriority] = useState('medium');
+  const [deadline, setDeadline] = useState('');
 
   // Filter va qidiruv
-  const [statusFilter, setStatusFilter] = useState('all'); // all, active, completed
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -142,7 +190,23 @@ function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('todo_theme') || 'dark');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Mavzuni HTML ga ulash
+  // Fokus / Sekundnomer & Pomodoro holati
+  const [focusTask, setFocusTask] = useState(null); // { id, text, timeSpent }
+  const [timerMode, setTimerMode] = useState('stopwatch'); // 'stopwatch' yoki 'pomodoro'
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const timerRef = useRef(null);
+
+  // Sana (Lazy initializer)
+  const [todayFormatted] = useState(() => {
+    return new Date().toLocaleDateString('uz-UZ', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long'
+    });
+  });
+
+  // Mavzuni ulash
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('todo_theme', theme);
@@ -152,9 +216,40 @@ function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // 1. Real-time Firebase Listener
+  // Auth kuzatish (Login / Logout)
   useEffect(() => {
-    const q = query(collection(db, 'todos'), orderBy('createdAt', 'desc'));
+    const unsubscribeAuth = onAuthStateChanged(auth, user => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  // Google bilan kirish
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error('Google bilan kirishda xatolik:', err);
+      alert('Google bilan kirishda xatolik: ' + err.message);
+    }
+  };
+
+  // Tizimdan chiqish
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error('Chiqishda xatolik:', err);
+    }
+  };
+
+  // 1. Real-time Firebase Listener (Foydalanuvchi ID bo'yicha filter)
+  useEffect(() => {
+    const q = query(
+      collection(db, 'todos'),
+      where('userId', '==', activeUserId)
+    );
+
     const unsubscribe = onSnapshot(
       q,
       snapshot => {
@@ -162,6 +257,14 @@ function App() {
           id: docSnap.id,
           ...docSnap.data()
         }));
+
+        // In-memory tartiblash (Kompozit indeks xatosini oldini olish uchun)
+        list.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+
         setTodos(list);
         setLoading(false);
       },
@@ -170,23 +273,83 @@ function App() {
         setLoading(false);
       }
     );
-    return () => unsubscribe();
-  }, []);
 
-  // 2. Yangi vazifa qo'shish
+    return () => unsubscribe();
+  }, [activeUserId]);
+
+  // Sekundnomer va Pomodoro hisoblagichi
+  useEffect(() => {
+    if (isTimerRunning) {
+      timerRef.current = setInterval(() => {
+        setTimerSeconds(prev => {
+          if (timerMode === 'pomodoro') {
+            if (prev <= 1) {
+              clearInterval(timerRef.current);
+              setIsTimerRunning(false);
+              if (soundEnabled) playChime();
+              triggerConfetti();
+              alert('🍅 Pomodoro vaqti tugadi! Ajoyib fokus!');
+              return 0;
+            }
+            return prev - 1;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isTimerRunning, timerMode, soundEnabled]);
+
+  // Fokus rejimini yoqish
+  const startFocusOnTask = (task, e) => {
+    e.stopPropagation();
+    setFocusTask(task);
+    setTimerMode('stopwatch');
+    setTimerSeconds(0);
+    setIsTimerRunning(true);
+  };
+
+  // Fokus vaqtini saqlash
+  const saveFocusedTime = async () => {
+    if (!focusTask) return;
+    const spentSecs = timerMode === 'pomodoro' ? (25 * 60 - timerSeconds) : timerSeconds;
+    if (spentSecs > 0) {
+      try {
+        const newTotal = (focusTask.timeSpent || 0) + spentSecs;
+        await updateDoc(doc(db, 'todos', focusTask.id), {
+          timeSpent: newTotal
+        });
+        setFocusTask(prev => ({ ...prev, timeSpent: newTotal }));
+        alert(`⏱️ ${Math.round(spentSecs / 60)} daqiqa vazifaga muvaffaqiyatli saqlandi!`);
+      } catch (err) {
+        console.error('Vaqt saqlashda xatolik:', err);
+      }
+    }
+    setIsTimerRunning(false);
+  };
+
+  // 2. CREATE: Yangi vazifa qo'shish
   const addTodo = async e => {
     e.preventDefault();
     if (!newTodo.trim()) return;
 
     const textToAdd = newTodo.trim();
     setNewTodo('');
+    const taskDeadline = deadline;
+    setDeadline('');
 
     try {
       await addDoc(collection(db, 'todos'), {
         text: textToAdd,
         category,
         priority,
+        deadline: taskDeadline || null,
         completed: false,
+        userId: activeUserId,
+        userEmail: currentUser?.email || 'Mehmon',
+        timeSpent: 0,
         createdAt: serverTimestamp()
       });
     } catch (error) {
@@ -194,23 +357,28 @@ function App() {
     }
   };
 
-  // 3. Vazifani o'chirish
+  // 3. DELETE: Vazifani o'chirish
   const deleteTodo = async (id, e) => {
     e.stopPropagation();
     try {
       await deleteDoc(doc(db, 'todos', id));
+      if (focusTask?.id === id) {
+        setFocusTask(null);
+        setIsTimerRunning(false);
+      }
     } catch (error) {
       console.error("O'chirishda xatolik:", error);
     }
   };
 
-  // 4. Bajarildi holatini o'zgartirish
+  // 4. UPDATE: Bajarildi holatini o'zgartirish
   const toggleComplete = async todo => {
     try {
       const willBeCompleted = !todo.completed;
       const todoRef = doc(db, 'todos', todo.id);
       await updateDoc(todoRef, {
-        completed: willBeCompleted
+        completed: willBeCompleted,
+        completedAt: willBeCompleted ? serverTimestamp() : null
       });
 
       if (willBeCompleted) {
@@ -251,7 +419,18 @@ function App() {
     }
   };
 
-  // Statistika hisoblash
+  // Bugungi ISO sana (masalan: 2026-10-30)
+  const [todayIsoStr] = useState(() => new Date().toISOString().split('T')[0]);
+
+  // Muddatni tekshirish (overdue / today)
+  const getDeadlineStatus = deadlineStr => {
+    if (!deadlineStr) return null;
+    if (deadlineStr < todayIsoStr) return { label: '⚠️ Muddati oʻtgan', type: 'overdue' };
+    if (deadlineStr === todayIsoStr) return { label: '📅 Bugun', type: 'today' };
+    return { label: `📅 ${deadlineStr}`, type: 'future' };
+  };
+
+  // Statistika
   const totalCount = todos.length;
   const completedCount = todos.filter(t => t.completed).length;
   const progressPercent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
@@ -264,39 +443,61 @@ function App() {
     return 'Kichik qadamlar katta muvaffaqiyatlarga olib boradi 💪';
   }, [totalCount, progressPercent]);
 
-  // Filtrlash va qidiruv mantig'i
+  // Filtrlash va qidiruv
   const filteredTodos = useMemo(() => {
     return todos.filter(todo => {
-      // Holat filtri
       if (statusFilter === 'active' && todo.completed) return false;
       if (statusFilter === 'completed' && !todo.completed) return false;
-
-      // Kategoriya filtri
       if (selectedCategory !== 'all' && todo.category !== selectedCategory) return false;
 
-      // Qidiruv
       if (searchQuery.trim()) {
         const queryLower = searchQuery.toLowerCase();
-        const textMatch = (todo.text || '').toLowerCase().includes(queryLower);
-        return textMatch;
+        return (todo.text || '').toLowerCase().includes(queryLower);
       }
-
       return true;
     });
   }, [todos, statusFilter, selectedCategory, searchQuery]);
 
-  // Bugungi sana (Lazy initializer)
-  const [todayFormatted] = useState(() => {
-    return new Date().toLocaleDateString('uz-UZ', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long'
-    });
-  });
-
   return (
     <div className="app-wrapper">
       <div className="todo-card">
+        {/* Foydalanuvchi Boshqaruv Paneli (User Profile & ID) */}
+        <div className="user-bar">
+          <div className="user-info">
+            <div className="user-avatar">
+              {currentUser?.photoURL ? (
+                <img src={currentUser.photoURL} alt="Avatar" />
+              ) : (
+                <span>👤</span>
+              )}
+            </div>
+            <div>
+              <div className="user-meta-name">
+                {currentUser?.displayName || 'Mehmon foydalanuvchi'}
+                <span className="user-badge">
+                  {currentUser ? 'Google' : 'ID: ' + guestId.substring(0, 8)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="user-actions">
+            {currentUser ? (
+              <button onClick={handleLogout} className="btn-auth-logout" title="Akkauntdan chiqish">
+                Chiqish 🚪
+              </button>
+            ) : (
+              <button
+                onClick={handleGoogleLogin}
+                className="btn-auth-google"
+                title="Vazifalaringizni doimiy saqlash uchun kiring"
+              >
+                <span>🌐</span> Google bilan kirish
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Yuqori Panel: Sarlavha va Rejim tugmalari */}
         <header className="header-top">
           <div className="header-title-box">
@@ -324,6 +525,63 @@ function App() {
           </div>
         </header>
 
+        {/* KREATIV QISM: Fokus Sekundnomeri va Pomodoro Taymeri */}
+        {focusTask && (
+          <div className="timer-widget">
+            <div className="timer-header">
+              <div className="timer-task-name">
+                <span>🎯 Fokus:</span> {focusTask.text}
+              </div>
+              <div className="timer-mode-pills">
+                <button
+                  onClick={() => {
+                    setTimerMode('stopwatch');
+                    setTimerSeconds(0);
+                    setIsTimerRunning(false);
+                  }}
+                  className={`mode-pill ${timerMode === 'stopwatch' ? 'active' : ''}`}
+                >
+                  ⏱️ Sekundnomer
+                </button>
+                <button
+                  onClick={() => {
+                    setTimerMode('pomodoro');
+                    setTimerSeconds(25 * 60);
+                    setIsTimerRunning(false);
+                  }}
+                  className={`mode-pill ${timerMode === 'pomodoro' ? 'active' : ''}`}
+                >
+                  🍅 Pomodoro
+                </button>
+              </div>
+            </div>
+
+            <div className="timer-clock">{formatSeconds(timerSeconds)}</div>
+
+            <div className="timer-controls">
+              <button
+                onClick={() => setIsTimerRunning(prev => !prev)}
+                className="btn-timer-primary"
+              >
+                {isTimerRunning ? '⏸ Toʻxtatish' : '▶️ Boshlash'}
+              </button>
+              <button onClick={saveFocusedTime} className="btn-timer-secondary">
+                💾 Vaqtni saqlash
+              </button>
+              <button
+                onClick={() => {
+                  setFocusTask(null);
+                  setIsTimerRunning(false);
+                }}
+                className="btn-timer-close"
+                title="Taymerni yopish"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Progress & Statistika kartasi */}
         <div className="stats-banner">
           <div className="stats-info">
@@ -345,7 +603,7 @@ function App() {
               type="text"
               value={newTodo}
               onChange={e => setNewTodo(e.target.value)}
-              placeholder="Qanday rejangiz bor? Masalan: Loyiha dizaynini yakunlash..."
+              placeholder="Qanday rejangiz bor? Masalan: Loyiha hisobotini topshirish..."
               className="task-input"
             />
             <button type="submit" className="btn-add">
@@ -375,6 +633,14 @@ function App() {
               <option value="medium">🟡 Oʻrta muhimlik</option>
               <option value="low">🟢 Oddiy</option>
             </select>
+
+            <input
+              type="date"
+              value={deadline}
+              onChange={e => setDeadline(e.target.value)}
+              className="date-input"
+              title="Vazifa bajarilish muddati"
+            />
           </div>
         </form>
 
@@ -416,7 +682,6 @@ function App() {
             </button>
           </div>
 
-          {/* Kategoriya bo'yicha chip filterlar */}
           <div className="category-chips">
             {Object.entries(CATEGORIES).map(([key, cat]) => (
               <button
@@ -435,7 +700,7 @@ function App() {
           <div className="state-box">
             <span className="state-icon">⏳</span>
             <div className="state-title">Yuklanmoqda...</div>
-            <div className="state-desc">Firebase bazasi bilan ulanmoqda</div>
+            <div className="state-desc">Vazifalaringiz sinxronlanmoqda</div>
           </div>
         ) : filteredTodos.length === 0 ? (
           <div className="state-box">
@@ -459,19 +724,24 @@ function App() {
               const catConfig = CATEGORIES[todo.category] || CATEGORIES.work;
               const prioConfig = PRIORITIES[todo.priority] || PRIORITIES.medium;
               const isEditing = editingId === todo.id;
+              const isFocused = focusTask?.id === todo.id;
+              const deadlineInfo = getDeadlineStatus(todo.deadline);
+              const durationText = todo.completed
+                ? getCompletionDuration(todo.createdAt, todo.completedAt)
+                : null;
 
               return (
                 <li
                   key={todo.id}
-                  className={`todo-item ${todo.completed ? 'completed' : ''}`}
+                  className={`todo-item ${todo.completed ? 'completed' : ''} ${
+                    isFocused ? 'active-focus' : ''
+                  }`}
                 >
-                  {/* Muhimlik chizig'i */}
                   <div
                     className="priority-stripe"
                     style={{ backgroundColor: prioConfig.color }}
                   />
 
-                  {/* Maxsus Checkbox */}
                   <button
                     onClick={() => toggleComplete(todo)}
                     className={`checkbox-btn ${todo.completed ? 'checked' : ''}`}
@@ -480,7 +750,6 @@ function App() {
                     {todo.completed ? '✓' : ''}
                   </button>
 
-                  {/* Vazifa matni yoki Tahrirlash maydoni */}
                   <div className="todo-content" onClick={() => !isEditing && toggleComplete(todo)}>
                     {isEditing ? (
                       <div className="edit-input-box" onClick={e => e.stopPropagation()}>
@@ -514,6 +783,7 @@ function App() {
                           >
                             {catConfig.icon} {catConfig.label}
                           </span>
+
                           <span className="priority-tag" style={{ color: prioConfig.color }}>
                             <span
                               className="priority-dot"
@@ -521,14 +791,40 @@ function App() {
                             />
                             {prioConfig.label}
                           </span>
+
+                          {deadlineInfo && (
+                            <span className={`deadline-badge ${deadlineInfo.type}`}>
+                              {deadlineInfo.label}
+                            </span>
+                          )}
+
+                          {todo.timeSpent > 0 && (
+                            <span className="time-spent-tag" title="Fokusda sarflangan vaqt">
+                              ⏱️ {formatSeconds(todo.timeSpent)}
+                            </span>
+                          )}
+
+                          {durationText && (
+                            <span className="duration-tag" title="Vazifa qancha vaqtda bajarilgani">
+                              ✓ {durationText}
+                            </span>
+                          )}
                         </div>
                       </>
                     )}
                   </div>
 
-                  {/* Amallar: Tahrirlash va O'chirish */}
                   {!isEditing && (
                     <div className="todo-actions">
+                      {!todo.completed && (
+                        <button
+                          onClick={e => startFocusOnTask(todo, e)}
+                          className="action-btn focus"
+                          title="Fokus / Sekundnomer bilan ishlash"
+                        >
+                          ⏱️
+                        </button>
+                      )}
                       <button
                         onClick={e => {
                           e.stopPropagation();
@@ -555,7 +851,6 @@ function App() {
           </ul>
         )}
 
-        {/* Pastki Qism: Bajarilganlarni tozalash */}
         {completedCount > 0 && (
           <footer className="footer-bar">
             <span>{completedCount} ta vazifa bajarildi</span>
