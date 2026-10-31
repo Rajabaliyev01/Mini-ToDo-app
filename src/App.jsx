@@ -21,24 +21,261 @@ import {
 } from 'firebase/firestore';
 import './App.css';
 
-// Kategoriyalar
-const CATEGORIES = {
-  all: { label: 'Barchasi', icon: '🌟', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },
-  work: { label: 'Ish', icon: '💼', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.15)' },
-  study: { label: "O'qish", icon: '📚', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },
-  personal: { label: 'Shaxsiy', icon: '🏠', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
-  urgent: { label: 'Tezkor', icon: '⚡', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
-  idea: { label: "G'oya", icon: '💡', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
+// 3 tillik tarjima lug'ati (O'zbekcha, Ruscha, Inglizcha)
+const TRANSLATIONS = {
+  uz: {
+    appTitle: 'Task Flow',
+    appSubtitle: 'Aqlli va qulay rejalashtiruvchi',
+    authCardTitleLogin: 'Tizimga kirish',
+    authCardTitleRegister: 'Yangi hisob ochish',
+    authCardDesc: 'Rejalaringiz xavfsiz saqlanadi va barcha qurilmalaringizda sinxronlanadi.',
+    tabLogin: 'Kirish',
+    tabRegister: 'Roʻyxatdan oʻtish',
+    nameLabel: 'Ismingiz',
+    namePlaceholder: 'Masalan: Javohir',
+    emailLabel: 'Email manzilingiz',
+    emailPlaceholder: 'nomi@email.com',
+    passLabel: 'Parol (kamida 6 ta belgi)',
+    passPlaceholder: '••••••••',
+    btnLoginSubmit: 'Tizimga kirish',
+    btnRegisterSubmit: 'Hisob yaratish',
+    btnGoogle: 'Google orqali davom etish',
+    orDivider: 'yoki',
+    loading: 'Yuklanmoqda...',
+    accountBadge: 'Akkaunt',
+    logout: 'Chiqish 🚪',
+    dailyResult: 'Kunlik Natija',
+    inputPlaceholder: 'Qanday rejangiz bor? Masalan: Loyiha hisobotini topshirish...',
+    btnAdd: '+ Qoʻshish',
+    deadlineTooltip: 'Bajarilish muddati',
+    searchPlaceholder: 'Vazifalarni qidirish...',
+    tabAll: 'Barchasi',
+    tabActive: 'Faol',
+    tabCompleted: 'Bajarilgan',
+    stateEmptyTitle: 'Hech qanday vazifa yoʻq',
+    stateEmptyDesc: 'Yangi vazifa kiritib boshlang',
+    stateSearchEmptyTitle: 'Hech narsa topilmadi',
+    stateSearchEmptyDesc: 'Boshqa soʻz bilan qidirib koʻring',
+    stateCompletedEmptyTitle: 'Hali bajarilgan vazifalar yoʻq',
+    stateCompletedEmptyDesc: 'Rejalaringizni bajaring va bu yerda koʻring',
+    stateSyncing: 'Vazifalaringiz sinxronlanmoqda',
+    focusPrefix: '🎯 Fokus:',
+    modeStopwatch: '⏱️ Sekundnomer',
+    modePomodoro: '🍅 Pomodoro',
+    btnTimerStart: '▶️ Boshlash',
+    btnTimerPause: '⏸ Toʻxtatish',
+    btnTimerSave: '💾 Vaqtni saqlash',
+    btnSaveEdit: 'Saqlash',
+    btnCancelEdit: 'Bekor',
+    btnDoneTooltip: 'Bajarildi deb belgilash',
+    btnUndoTooltip: 'Qaytarish',
+    btnFocusTooltip: 'Fokus / Sekundnomer bilan ishlash',
+    btnEditTooltip: 'Tahrirlash',
+    btnDeleteTooltip: 'Oʻchirish',
+    footerTasksCompleted: '{count} ta vazifa bajarildi',
+    btnClearCompleted: 'Bajarilganlarni tozalash',
+    confirmClear: '{count} ta bajarilgan vazifani oʻchirib tashlamoqchimisiz?',
+    pomodoroAlert: '🍅 Pomodoro vaqti tugadi! Ajoyib fokus!',
+    saveTimeAlert: '⏱️ {min} daqiqa vazifaga muvaffaqiyatli saqlandi!',
+    motivationEmpty: 'Bugungi rejalaringizni qoʻshing! ✍️',
+    motivationFull: 'Barcha vazifalar bajarildi! Ajoyib natija! 🏆🎉',
+    motivationHalf: 'Rejaning yarmidan koʻpi tayyor! Shunday davom eting 🚀',
+    motivationStart: 'Kichik qadamlar katta muvaffaqiyatlarga olib boradi 💪',
+    deadlineOverdue: '⚠️ Muddati oʻtgan',
+    deadlineToday: '📅 Bugun',
+    durationLessMinute: '⚡ 1 daqiqadan kam',
+    durationMinutes: '⏱️ {min} daqiqada',
+    durationHours: '⏱️ {hours} soatda',
+    durationDays: '📅 {days} kunda',
+    categories: {
+      all: 'Barchasi',
+      work: 'Ish',
+      study: 'Oʻqish',
+      personal: 'Shaxsiy',
+      urgent: 'Tezkor',
+      idea: 'Gʻoya'
+    },
+    priorities: {
+      high: 'Yuqori',
+      medium: 'Oʻrta',
+      low: 'Oddiy'
+    }
+  },
+  ru: {
+    appTitle: 'Task Flow',
+    appSubtitle: 'Умный и удобный планировщик задач',
+    authCardTitleLogin: 'Вход в систему',
+    authCardTitleRegister: 'Создать аккаунт',
+    authCardDesc: 'Ваши задачи надежно сохраняются и синхронизируются на всех устройствах.',
+    tabLogin: 'Вход',
+    tabRegister: 'Регистрация',
+    nameLabel: 'Ваше имя',
+    namePlaceholder: 'Например: Жавохир',
+    emailLabel: 'Электронная почта',
+    emailPlaceholder: 'name@email.com',
+    passLabel: 'Пароль (минимум 6 символов)',
+    passPlaceholder: '••••••••',
+    btnLoginSubmit: 'Войти',
+    btnRegisterSubmit: 'Зарегистрироваться',
+    btnGoogle: 'Продолжить через Google',
+    orDivider: 'или',
+    loading: 'Загрузка...',
+    accountBadge: 'Аккаунт',
+    logout: 'Выйти 🚪',
+    dailyResult: 'Дневной прогресс',
+    inputPlaceholder: 'Какая у вас задача? Например: сдать отчет по проекту...',
+    btnAdd: '+ Добавить',
+    deadlineTooltip: 'Срок выполнения',
+    searchPlaceholder: 'Поиск задач...',
+    tabAll: 'Все',
+    tabActive: 'Активные',
+    tabCompleted: 'Выполненные',
+    stateEmptyTitle: 'Задач пока нет',
+    stateEmptyDesc: 'Начните с добавления новой задачи',
+    stateSearchEmptyTitle: 'Ничего не найдено',
+    stateSearchEmptyDesc: 'Попробуйте поискать по-другому',
+    stateCompletedEmptyTitle: 'Пока нет выполненных задач',
+    stateCompletedEmptyDesc: 'Выполняйте дела и они появятся здесь',
+    stateSyncing: 'Синхронизация ваших задач',
+    focusPrefix: '🎯 Фокус:',
+    modeStopwatch: '⏱️ Секундомер',
+    modePomodoro: '🍅 Помидор',
+    btnTimerStart: '▶️ Старт',
+    btnTimerPause: '⏸ Пауза',
+    btnTimerSave: '💾 Сохранить время',
+    btnSaveEdit: 'Сохранить',
+    btnCancelEdit: 'Отмена',
+    btnDoneTooltip: 'Отметить выполненным',
+    btnUndoTooltip: 'Вернуть в активные',
+    btnFocusTooltip: 'Работать с фокусом / секундомером',
+    btnEditTooltip: 'Редактировать',
+    btnDeleteTooltip: 'Удалить',
+    footerTasksCompleted: 'Выполнено задач: {count}',
+    btnClearCompleted: 'Очистить выполненные',
+    confirmClear: 'Удалить {count} выполненных задач?',
+    pomodoroAlert: '🍅 Время Pomodoro истекло! Отличная работа!',
+    saveTimeAlert: '⏱️ {min} мин успешно сохранено в задаче!',
+    motivationEmpty: 'Добавьте задачи на сегодня! ✍️',
+    motivationFull: 'Все задачи выполнены! Отличный результат! 🏆🎉',
+    motivationHalf: 'Больше половины готово! Так держать 🚀',
+    motivationStart: 'Маленькие шаги ведут к большим победам 💪',
+    deadlineOverdue: '⚠️ Просрочено',
+    deadlineToday: '📅 Сегодня',
+    durationLessMinute: '⚡ Меньше 1 мин',
+    durationMinutes: '⏱️ За {min} мин',
+    durationHours: '⏱️ За {hours} ч',
+    durationDays: '📅 За {days} дн',
+    categories: {
+      all: 'Все',
+      work: 'Работа',
+      study: 'Учёба',
+      personal: 'Личное',
+      urgent: 'Срочно',
+      idea: 'Идея'
+    },
+    priorities: {
+      high: 'Высокий',
+      medium: 'Средний',
+      low: 'Низкий'
+    }
+  },
+  en: {
+    appTitle: 'Task Flow',
+    appSubtitle: 'Smart and elegant productivity planner',
+    authCardTitleLogin: 'Welcome Back',
+    authCardTitleRegister: 'Create Account',
+    authCardDesc: 'Your tasks stay safe and synchronized in real-time across all devices.',
+    tabLogin: 'Sign In',
+    tabRegister: 'Sign Up',
+    nameLabel: 'Your Name',
+    namePlaceholder: 'e.g. Javohir',
+    emailLabel: 'Email Address',
+    emailPlaceholder: 'name@email.com',
+    passLabel: 'Password (at least 6 characters)',
+    passPlaceholder: '••••••••',
+    btnLoginSubmit: 'Sign In',
+    btnRegisterSubmit: 'Create Account',
+    btnGoogle: 'Continue with Google',
+    orDivider: 'or',
+    loading: 'Loading...',
+    accountBadge: 'Account',
+    logout: 'Logout 🚪',
+    dailyResult: 'Daily Progress',
+    inputPlaceholder: "What's on your mind? e.g. submit project report...",
+    btnAdd: '+ Add Task',
+    deadlineTooltip: 'Deadline date',
+    searchPlaceholder: 'Search tasks...',
+    tabAll: 'All',
+    tabActive: 'Active',
+    tabCompleted: 'Completed',
+    stateEmptyTitle: 'No tasks yet',
+    stateEmptyDesc: 'Start by adding your first task above',
+    stateSearchEmptyTitle: 'Nothing found',
+    stateSearchEmptyDesc: 'Try searching with different keywords',
+    stateCompletedEmptyTitle: 'No completed tasks yet',
+    stateCompletedEmptyDesc: 'Complete tasks to see your history here',
+    stateSyncing: 'Synchronizing your tasks',
+    focusPrefix: '🎯 Focus:',
+    modeStopwatch: '⏱️ Stopwatch',
+    modePomodoro: '🍅 Pomodoro',
+    btnTimerStart: '▶️ Start',
+    btnTimerPause: '⏸ Pause',
+    btnTimerSave: '💾 Save Time',
+    btnSaveEdit: 'Save',
+    btnCancelEdit: 'Cancel',
+    btnDoneTooltip: 'Mark as completed',
+    btnUndoTooltip: 'Mark as uncompleted',
+    btnFocusTooltip: 'Work with stopwatch / Pomodoro focus',
+    btnEditTooltip: 'Edit',
+    btnDeleteTooltip: 'Delete',
+    footerTasksCompleted: '{count} tasks completed',
+    btnClearCompleted: 'Clear Completed',
+    confirmClear: 'Are you sure you want to delete {count} completed tasks?',
+    pomodoroAlert: '🍅 Pomodoro finished! Awesome focus session!',
+    saveTimeAlert: '⏱️ {min} minutes successfully logged to task!',
+    motivationEmpty: 'Add your goals for today! ✍️',
+    motivationFull: 'All tasks completed! Fantastic job! 🏆🎉',
+    motivationHalf: 'Over halfway done! Keep up the momentum 🚀',
+    motivationStart: 'Small daily steps build giant achievements 💪',
+    deadlineOverdue: '⚠️ Overdue',
+    deadlineToday: '📅 Today',
+    durationLessMinute: '⚡ Under 1 min',
+    durationMinutes: '⏱️ In {min} min',
+    durationHours: '⏱️ In {hours} hrs',
+    durationDays: '📅 In {days} days',
+    categories: {
+      all: 'All',
+      work: 'Work',
+      study: 'Study',
+      personal: 'Personal',
+      urgent: 'Urgent',
+      idea: 'Idea'
+    },
+    priorities: {
+      high: 'High',
+      medium: 'Medium',
+      low: 'Low'
+    }
+  }
 };
 
-// Muhimlik darajalari
-const PRIORITIES = {
-  high: { label: 'Yuqori', color: '#ef4444' },
-  medium: { label: "O'rta", color: '#f59e0b' },
-  low: { label: 'Oddiy', color: '#10b981' }
+// Kategoriya konfiguratsiyasi (belgilar va ranglar)
+const CATEGORY_META = {
+  all: { icon: '🌟', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
+  work: { icon: '💼', color: '#2563eb', bg: 'rgba(37, 99, 235, 0.15)' },
+  study: { icon: '📚', color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)' },
+  personal: { icon: '🏠', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
+  urgent: { icon: '⚡', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
+  idea: { icon: '💡', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
 };
 
-// Yengil va mustaqil Konfetti (Salute) effekti
+const PRIORITY_META = {
+  high: { color: '#ef4444' },
+  medium: { color: '#f59e0b' },
+  low: { color: '#10b981' }
+};
+
+// Konfetti (Salute) effekti
 const triggerConfetti = () => {
   try {
     const canvas = document.createElement('canvas');
@@ -55,7 +292,7 @@ const triggerConfetti = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const colors = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4'];
+    const colors = ['#3b82f6', '#60a5fa', '#93c5fd', '#10b981', '#f59e0b', '#ec4899'];
     const particles = Array.from({ length: 70 }, () => ({
       x: canvas.width / 2,
       y: canvas.height * 0.45,
@@ -100,11 +337,11 @@ const triggerConfetti = () => {
     };
     render();
   } catch {
-    // Canvas xatolarini e'tiborsiz qoldirish
+    // E'tiborsiz qoldirish
   }
 };
 
-// Web Audio API orqali ovoz
+// Web Audio API orqali yoqimli chime ovozi
 const playChime = () => {
   try {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -128,7 +365,7 @@ const playChime = () => {
   }
 };
 
-// Vaqtni formatlash (soniyalarni mm:ss yoki hh:mm:ss ga)
+// Vaqtni formatlash (mm:ss yoki hh:mm:ss)
 const formatSeconds = sec => {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
@@ -139,121 +376,36 @@ const formatSeconds = sec => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-// Bajarilish davomiyligini hisoblash
-const getCompletionDuration = (created, completed) => {
-  if (!created || !completed) return null;
-  const start = created.seconds ? created.seconds * 1000 : new Date(created).getTime();
-  const end = completed.seconds ? completed.seconds * 1000 : new Date(completed).getTime();
-  const diffMinutes = Math.round((end - start) / (1000 * 60));
-
-  if (diffMinutes < 1) return '⚡ 1 daqiqadan kam vaqtda';
-  if (diffMinutes < 60) return `⏱️ ${diffMinutes} daqiqada`;
-  const hours = Math.floor(diffMinutes / 60);
-  if (hours < 24) return `⏱️ ${hours} soatda`;
-  const days = Math.floor(hours / 24);
-  return `📅 ${days} kunda`;
-};
-
 function App() {
-  // Foydalanuvchi va Auth holati
-  const [currentUser, setCurrentUser] = useState(null);
-  const [guestId] = useState(() => {
-    let stored = localStorage.getItem('guest_user_id');
-    if (!stored) {
-      stored = 'guest_' + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('guest_user_id', stored);
-    }
-    return stored;
-  });
+  // Til holati: uz, ru, en (LocalStorage da eslab qoladi)
+  const [lang, setLang] = useState(() => localStorage.getItem('todo_app_lang') || 'uz');
 
-  const activeUserId = currentUser ? currentUser.uid : guestId;
+  // Lug'at yordamchisi
+  const t = useMemo(() => {
+    return TRANSLATIONS[lang] || TRANSLATIONS.uz;
+  }, [lang]);
 
-  const [todos, setTodos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dbError, setDbError] = useState(null);
-
-  // Auth Modal holati
-  const [showAuthModal, setShowAuthModal] = useState(true);
-  const [authMode, setAuthMode] = useState('login'); // 'login' yoki 'register'
-  const [lang, setLang] = useState('uz'); // 'uz', 'ru', 'en'
-  const translations = {
-    uz: {
-      login: 'Kirish',
-      register: 'Ro\'yxatdan\'o\'tish',
-      emailPlaceholder: "Email kiriting...",
-      passwordPlaceholder: "Parol kiriting...",
-      namePlaceholder: "Ism (ixtiyoriy)",
-      logout: 'Chiqish 🚪',
-      authButton: '🔐 Kirish / Ro\'yxat',
-      addTask: '+ Qo\'shish',
-      placeholderTask: "Qanday rejangiz bor? Masalan: Loyiha hisobotini topshirish...",
-      categoryWork: '💼 Ish',
-      categoryStudy: "📚 O'qish",
-      categoryPersonal: '🏠 Shaxsiy',
-      categoryUrgent: '⚡ Tezkor',
-      categoryIdea: "💡 G'oya",
-      priorityHigh: '🔴 Yuqori',
-      priorityMedium: "🟡 O'rta",
-      priorityLow: '🟢 Oddiy',
-      searchPlaceholder: 'Vazifalarni qidirish...',
-      all: 'Barchasi',
-      active: 'Faol',
-      completed: 'Bajarilgan'
-    },
-    ru: {
-      login: 'Войти',
-      register: 'Регистрация',
-      emailPlaceholder: "Введите email...",
-      passwordPlaceholder: "Введите пароль...",
-      namePlaceholder: "Имя (по желанию)",
-      logout: 'Выйти 🚪',
-      authButton: '🔐 Войти / Регистрация',
-      addTask: '+ Добавить',
-      placeholderTask: "Какая у вас задача? Например: сдать отчет...",
-      categoryWork: '💼 Работа',
-      categoryStudy: "📚 Учеба",
-      categoryPersonal: '🏠 Личное',
-      categoryUrgent: '⚡ Срочно',
-      categoryIdea: "💡 Идея",
-      priorityHigh: '🔴 Высокий',
-      priorityMedium: "🟡 Средний",
-      priorityLow: '🟢 Низкий',
-      searchPlaceholder: 'Поиск задач...',
-      all: 'Все',
-      active: 'Активные',
-      completed: 'Выполненные'
-    },
-    en: {
-      login: 'Login',
-      register: 'Register',
-      emailPlaceholder: "Enter email...",
-      passwordPlaceholder: "Enter password...",
-      namePlaceholder: "Name (optional)",
-      logout: 'Logout 🚪',
-      authButton: '🔐 Sign In / Register',
-      addTask: '+ Add',
-      placeholderTask: "What's your plan? e.g., submit project report...",
-      categoryWork: '💼 Work',
-      categoryStudy: "📚 Study",
-      categoryPersonal: '🏠 Personal',
-      categoryUrgent: '⚡ Urgent',
-      categoryIdea: "💡 Idea",
-      priorityHigh: '🔴 High',
-      priorityMedium: "🟡 Medium",
-      priorityLow: '🟢 Low',
-      searchPlaceholder: 'Search tasks...',
-      all: 'All',
-      active: 'Active',
-      completed: 'Completed'
-    }
+  const handleLangChange = newLang => {
+    setLang(newLang);
+    localStorage.setItem('todo_app_lang', newLang);
   };
-  const t = (key) => translations[lang][key] || key;
 
+  // Foydalanuvchi Auth holati
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  // Auth formasi holatlari
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Vazifalar ro'yxati va holati
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dbError, setDbError] = useState(null);
 
   // Form maydonlari
   const [newTodo, setNewTodo] = useState('');
@@ -261,12 +413,12 @@ function App() {
   const [priority, setPriority] = useState('medium');
   const [deadline, setDeadline] = useState('');
 
-  // Filter va qidiruv
+  // Filtrlar va qidiruv
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Tahrirlash (Inline editing)
+  // Inline tahrirlash
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
 
@@ -274,23 +426,12 @@ function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('todo_theme') || 'dark');
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Fokus / Sekundnomer & Pomodoro holati
+  // Fokus Sekundnomer & Pomodoro
   const [focusTask, setFocusTask] = useState(null);
   const [timerMode, setTimerMode] = useState('stopwatch');
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const timerRef = useRef(null);
-
-  // Sana (Lazy initializer)
-  const [todayFormatted] = useState(() => {
-    return new Date().toLocaleDateString('uz-UZ', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long'
-    });
-  });
-
-  const [todayIsoStr] = useState(() => new Date().toISOString().split('T')[0]);
 
   // Mavzuni ulash
   useEffect(() => {
@@ -302,10 +443,27 @@ function App() {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Auth kuzatish
+  // Sana formatlash (Tanlangan tilga mos)
+  const todayFormatted = useMemo(() => {
+    const localeMap = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-US' };
+    try {
+      return new Date().toLocaleDateString(localeMap[lang] || 'uz-UZ', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+    } catch {
+      return new Date().toLocaleDateString();
+    }
+  }, [lang]);
+
+  const todayIsoStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Firebase Auth holatini tinglash
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
+      setAuthChecking(false);
     });
     return () => unsubscribeAuth();
   }, []);
@@ -318,31 +476,30 @@ function App() {
 
     try {
       if (authMode === 'register') {
-        if (!authEmail || !authPassword) {
-          throw new Error('Email va parolni kiriting');
+        if (!authEmail.trim() || !authPassword) {
+          throw new Error(lang === 'ru' ? 'Введите email и пароль' : lang === 'en' ? 'Please enter email and password' : 'Email va parolni kiriting');
         }
         if (authPassword.length < 6) {
-          throw new Error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
+          throw new Error(lang === 'ru' ? 'Пароль должен содержать минимум 6 символов' : lang === 'en' ? 'Password must be at least 6 characters' : 'Parol kamida 6 ta belgidan iborat boʻlishi kerak');
         }
-        const userCred = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+        const userCred = await createUserWithEmailAndPassword(auth, authEmail.trim(), authPassword);
         if (authName.trim()) {
           await updateProfile(userCred.user, { displayName: authName.trim() });
         }
       } else {
-        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+        await signInWithEmailAndPassword(auth, authEmail.trim(), authPassword);
       }
-      setShowAuthModal(false);
       setAuthEmail('');
       setAuthPassword('');
       setAuthName('');
     } catch (err) {
       let msg = err.message;
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        msg = "Email yoki parol noto'g'ri kiritildi";
+        msg = lang === 'ru' ? 'Неверный email или пароль' : lang === 'en' ? 'Invalid email or password' : 'Email yoki parol notoʻgʻri kiritildi';
       } else if (err.code === 'auth/email-already-in-use') {
-        msg = "Bu email allaqachon ro'yxatdan o'tgan";
+        msg = lang === 'ru' ? 'Этот email уже зарегистрирован' : lang === 'en' ? 'Email already in use' : 'Bu email allaqachon roʻyxatdan oʻtgan';
       } else if (err.code === 'auth/invalid-email') {
-        msg = "Email formati noto'g'ri";
+        msg = lang === 'ru' ? 'Неверный формат email' : lang === 'en' ? 'Invalid email format' : 'Email formati notoʻgʻri';
       }
       setAuthError(msg);
     } finally {
@@ -352,26 +509,34 @@ function App() {
 
   // Google bilan kirish
   const handleGoogleLogin = async () => {
+    setAuthError('');
     try {
       await signInWithPopup(auth, googleProvider);
-      setShowAuthModal(false);
     } catch (err) {
-      console.error('Google bilan kirishda xatolik:', err);
-      setAuthError('Google orqali kirishda xatolik: ' + err.message);
+      console.error('Google login error:', err);
+      setAuthError((lang === 'ru' ? 'Ошибка входа Google: ' : lang === 'en' ? 'Google Sign-in error: ' : 'Google orqali kirishda xatolik: ') + err.message);
     }
   };
 
-  // Tizimdan chiqish (Mehmon rejimiga qaytish)
+  // Tizimdan chiqish (Logout)
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setTodos([]);
     } catch (err) {
-      console.error('Chiqishda xatolik:', err);
+      console.error('Logout error:', err);
     }
   };
 
-  // 1. Real-time Firebase Listener
+  // Real-time Firestore Listener (Faqat kirgan foydalanuvchining ma'lumotlari)
   useEffect(() => {
+    if (!currentUser) {
+      setTodos([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     const todosCol = collection(db, 'todos');
     const unsubscribe = onSnapshot(
       todosCol,
@@ -381,10 +546,9 @@ function App() {
           ...docSnap.data()
         }));
 
-        // Foydalanuvchining o'z vazifalari + userId si bo'lmagan eski vazifalar
-        const userTodos = list.filter(t => !t.userId || t.userId === activeUserId);
+        // Faqat mazkur foydalanuvchining vazifalari
+        const userTodos = list.filter(t => t.userId === currentUser.uid || !t.userId);
 
-        // Sanasi bo'yicha saralash
         userTodos.sort((a, b) => {
           const timeA = a.createdAt?.seconds || 0;
           const timeB = b.createdAt?.seconds || 0;
@@ -396,18 +560,14 @@ function App() {
         setDbError(null);
       },
       error => {
-        console.error('Firestore xatosi:', error);
+        console.error('Firestore listener error:', error);
         setLoading(false);
-        if (error.message && error.message.includes('permission-denied')) {
-          setDbError('Firebase Firestore bazasi hali yoqilmagan yoki qoidalar bloklangan.');
-        } else {
-          setDbError(error.message);
-        }
+        setDbError(error.message);
       }
     );
 
     return () => unsubscribe();
-  }, [activeUserId]);
+  }, [currentUser]);
 
   // Sekundnomer va Pomodoro hisoblagichi
   useEffect(() => {
@@ -420,7 +580,7 @@ function App() {
               setIsTimerRunning(false);
               if (soundEnabled) playChime();
               triggerConfetti();
-              alert('🍅 Pomodoro vaqti tugadi! Ajoyib fokus!');
+              alert(t.pomodoroAlert);
               return 0;
             }
             return prev - 1;
@@ -432,9 +592,8 @@ function App() {
       clearInterval(timerRef.current);
     }
     return () => clearInterval(timerRef.current);
-  }, [isTimerRunning, timerMode, soundEnabled]);
+  }, [isTimerRunning, timerMode, soundEnabled, t]);
 
-  // Fokus rejimini yoqish
   const startFocusOnTask = (task, e) => {
     e.stopPropagation();
     setFocusTask(task);
@@ -443,10 +602,9 @@ function App() {
     setIsTimerRunning(true);
   };
 
-  // Fokus vaqtini saqlash
   const saveFocusedTime = async () => {
     if (!focusTask) return;
-    const spentSecs = timerMode === 'pomodoro' ? (25 * 60 - timerSeconds) : timerSeconds;
+    const spentSecs = timerMode === 'pomodoro' ? 25 * 60 - timerSeconds : timerSeconds;
     if (spentSecs > 0) {
       try {
         const newTotal = (focusTask.timeSpent || 0) + spentSecs;
@@ -454,7 +612,8 @@ function App() {
           timeSpent: newTotal
         });
         setFocusTask(prev => ({ ...prev, timeSpent: newTotal }));
-        alert(`⏱️ ${Math.round(spentSecs / 60)} daqiqa vazifaga muvaffaqiyatli saqlandi!`);
+        const mins = Math.max(1, Math.round(spentSecs / 60));
+        alert(t.saveTimeAlert.replace('{min}', mins));
       } catch (err) {
         console.error('Vaqt saqlashda xatolik:', err);
       }
@@ -462,10 +621,10 @@ function App() {
     setIsTimerRunning(false);
   };
 
-  // 2. CREATE: Yangi vazifa qo'shish
+  // CREATE: Yangi vazifa qo'shish
   const addTodo = async e => {
     e.preventDefault();
-    if (!newTodo.trim()) return;
+    if (!newTodo.trim() || !currentUser) return;
 
     const textToAdd = newTodo.trim();
     setNewTodo('');
@@ -479,19 +638,19 @@ function App() {
         priority,
         deadline: taskDeadline || null,
         completed: false,
-        userId: activeUserId,
-        userEmail: currentUser?.email || 'Mehmon',
-        userName: currentUser?.displayName || 'Mehmon',
+        userId: currentUser.uid,
+        userEmail: currentUser.email || '',
+        userName: currentUser.displayName || currentUser.email || 'User',
         timeSpent: 0,
         createdAt: serverTimestamp()
       });
     } catch (error) {
-      console.error("Qo'shishda xatolik:", error);
-      alert("Vazifa qo'shishda xatolik yuz berdi: " + error.message);
+      console.error("Qo'shish xatosi:", error);
+      alert(error.message);
     }
   };
 
-  // 3. DELETE: Vazifani o'chirish
+  // DELETE: Vazifani o'chirish
   const deleteTodo = async (id, e) => {
     e.stopPropagation();
     try {
@@ -501,11 +660,11 @@ function App() {
         setIsTimerRunning(false);
       }
     } catch (error) {
-      console.error("O'chirishda xatolik:", error);
+      console.error("O'chirish xatosi:", error);
     }
   };
 
-  // 4. UPDATE: Bajarildi holatini o'zgartirish
+  // UPDATE: Bajarildi holatini o'zgartirish
   const toggleComplete = async todo => {
     try {
       const willBeCompleted = !todo.completed;
@@ -520,11 +679,11 @@ function App() {
         triggerConfetti();
       }
     } catch (error) {
-      console.error('Yangilashda xatolik:', error);
+      console.error('Yangilash xatosi:', error);
     }
   };
 
-  // 5. Tahrirlashni saqlash
+  // EDIT: Tahrirlashni saqlash
   const saveEdit = async id => {
     if (!editText.trim()) {
       setEditingId(null);
@@ -536,15 +695,15 @@ function App() {
       });
       setEditingId(null);
     } catch (error) {
-      console.error('Tahrirlashda xatolik:', error);
+      console.error('Tahrirlash xatosi:', error);
     }
   };
 
-  // 6. Bajarilganlarni tozalash
+  // Bajarilganlarni tozalash
   const clearCompleted = async () => {
     const completedList = todos.filter(t => t.completed);
     if (completedList.length === 0) return;
-    if (!window.confirm(`${completedList.length} ta bajarilgan vazifani o'chirib tashlamoqchimisiz?`)) return;
+    if (!window.confirm(t.confirmClear.replace('{count}', completedList.length))) return;
 
     try {
       await Promise.all(completedList.map(t => deleteDoc(doc(db, 'todos', t.id))));
@@ -553,12 +712,27 @@ function App() {
     }
   };
 
-  // Muddatni tekshirish
+  // Muddat holatini hisoblash
   const getDeadlineStatus = deadlineStr => {
     if (!deadlineStr) return null;
-    if (deadlineStr < todayIsoStr) return { label: '⚠️ Muddati oʻtgan', type: 'overdue' };
-    if (deadlineStr === todayIsoStr) return { label: '📅 Bugun', type: 'today' };
+    if (deadlineStr < todayIsoStr) return { label: t.deadlineOverdue, type: 'overdue' };
+    if (deadlineStr === todayIsoStr) return { label: t.deadlineToday, type: 'today' };
     return { label: `📅 ${deadlineStr}`, type: 'future' };
+  };
+
+  // Bajarilish davomiyligini hisoblash
+  const getCompletionDuration = (created, completed) => {
+    if (!created || !completed) return null;
+    const start = created.seconds ? created.seconds * 1000 : new Date(created).getTime();
+    const end = completed.seconds ? completed.seconds * 1000 : new Date(completed).getTime();
+    const diffMinutes = Math.round((end - start) / (1000 * 60));
+
+    if (diffMinutes < 1) return t.durationLessMinute;
+    if (diffMinutes < 60) return t.durationMinutes.replace('{min}', diffMinutes);
+    const hours = Math.floor(diffMinutes / 60);
+    if (hours < 24) return t.durationHours.replace('{hours}', hours);
+    const days = Math.floor(hours / 24);
+    return t.durationDays.replace('{days}', days);
   };
 
   // Statistika
@@ -568,11 +742,11 @@ function App() {
 
   // Motivatsion gap
   const motivationText = useMemo(() => {
-    if (totalCount === 0) return "Bugungi rejalaringizni qo'shing! ✍️";
-    if (progressPercent === 100) return 'Barcha vazifalar bajarildi! Ajoyib natija! 🏆🎉';
-    if (progressPercent >= 50) return 'Rejaning yarmidan koʻpi tayyor! Shunday davom eting 🚀';
-    return 'Kichik qadamlar katta muvaffaqiyatlarga olib boradi 💪';
-  }, [totalCount, progressPercent]);
+    if (totalCount === 0) return t.motivationEmpty;
+    if (progressPercent === 100) return t.motivationFull;
+    if (progressPercent >= 50) return t.motivationHalf;
+    return t.motivationStart;
+  }, [totalCount, progressPercent, t]);
 
   // Filtrlash va qidiruv
   const filteredTodos = useMemo(() => {
@@ -589,6 +763,157 @@ function App() {
     });
   }, [todos, statusFilter, selectedCategory, searchQuery]);
 
+  // Dastlabki Auth tekshiruvi yuklanmoqda
+  if (authChecking) {
+    return (
+      <div className="app-wrapper">
+        <div className="state-box" style={{ marginTop: '120px' }}>
+          <span className="state-icon">⏳</span>
+          <div className="state-title">{t.loading}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // 1-QOIDAGA KO'RA: FOYDALANUVCHI TIZIMGA KIRMAGAN BO'LSA - FAQATGINA LOGIN / RO'YXATDAN O'TISH SAHIFASI CHIQADI!
+  // ILOVANI ISHLATIB BO'LMAYDI, X TUGMASI BO'LMAYDI!
+  if (!currentUser) {
+    return (
+      <div className="app-wrapper">
+        <div className="todo-card auth-page-card">
+          {/* Yuqori til va mavzu tanlash paneli */}
+          <div className="auth-top-bar">
+            <div className="lang-switcher">
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'uz' ? 'active' : ''}`}
+                onClick={() => handleLangChange('uz')}
+              >
+                🇺🇿 UZ
+              </button>
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'ru' ? 'active' : ''}`}
+                onClick={() => handleLangChange('ru')}
+              >
+                🇷🇺 RU
+              </button>
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'en' ? 'active' : ''}`}
+                onClick={() => handleLangChange('en')}
+              >
+                🇬🇧 EN
+              </button>
+            </div>
+
+            <button
+              onClick={toggleTheme}
+              className="icon-btn auth-theme-btn"
+              title={theme === 'dark' ? 'Yorugʻ mavzu' : 'Qorongʻi mavzu'}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          </div>
+
+          {/* Sarlavha va Breand */}
+          <div className="auth-hero">
+            <div className="auth-app-logo">🚀</div>
+            <h1 className="auth-app-title">{t.appTitle}</h1>
+            <p className="auth-app-subtitle">{t.appSubtitle}</p>
+          </div>
+
+          <div className="auth-box-inner">
+            <h2 className="auth-main-heading">
+              {authMode === 'login' ? t.authCardTitleLogin : t.authCardTitleRegister}
+            </h2>
+            <p className="auth-main-desc">{t.authCardDesc}</p>
+
+            {/* Kirish / Ro'yxatdan o'tish tablari */}
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthError('');
+                }}
+              >
+                {t.tabLogin}
+              </button>
+              <button
+                type="button"
+                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthError('');
+                }}
+              >
+                {t.tabRegister}
+              </button>
+            </div>
+
+            {authError && <div className="auth-error-alert">⚠️ {authError}</div>}
+
+            <form onSubmit={handleEmailAuth} className="auth-form">
+              {authMode === 'register' && (
+                <div className="auth-field">
+                  <label className="auth-label">{t.nameLabel}</label>
+                  <input
+                    type="text"
+                    value={authName}
+                    onChange={e => setAuthName(e.target.value)}
+                    placeholder={t.namePlaceholder}
+                    className="auth-input"
+                  />
+                </div>
+              )}
+
+              <div className="auth-field">
+                <label className="auth-label">{t.emailLabel}</label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  placeholder={t.emailPlaceholder}
+                  className="auth-input"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">{t.passLabel}</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  placeholder={t.passPlaceholder}
+                  className="auth-input"
+                />
+              </div>
+
+              <button type="submit" disabled={authLoading} className="btn-auth-submit">
+                {authLoading
+                  ? t.loading
+                  : authMode === 'login'
+                  ? t.btnLoginSubmit
+                  : t.btnRegisterSubmit}
+              </button>
+            </form>
+
+            <div className="auth-divider">{t.orDivider}</div>
+
+            <button type="button" onClick={handleGoogleLogin} className="btn-modal-google">
+              <span>🌐</span> {t.btnGoogle}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2-QISM: FOYDALANUVCHI TIZIMGA MUOFFAQIYATLI KIRGANDA ASOSIY ILOVA OCHILADI
   return (
     <div className="app-wrapper">
       <div className="todo-card">
@@ -599,51 +924,42 @@ function App() {
               {currentUser?.photoURL ? (
                 <img src={currentUser.photoURL} alt="Avatar" />
               ) : (
-                <span>{currentUser ? '👤' : '🕶️'}</span>
+                <span>👤</span>
               )}
             </div>
             <div>
               <div className="user-meta-name">
-                {currentUser ? (currentUser.displayName || currentUser.email) : 'Mehmon rejimi'}
-                <span className="user-badge">
-                  {currentUser ? 'Akkaunt' : 'Guest: ' + guestId.substring(0, 6)}
-                </span>
+                {currentUser.displayName || currentUser.email}
+                <span className="user-badge">{t.accountBadge}</span>
               </div>
             </div>
           </div>
 
           <div className="user-actions">
-            {currentUser ? (
-              <button onClick={handleLogout} className="btn-auth-logout" title="Akkauntdan chiqish (Mehmon rejimiga o'tish)">
-                Chiqish 🚪
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  setAuthError('');
-                  setShowAuthModal(true);
-                }}
-                className="btn-auth-open"
-                title="Kirish yoki Ro'yxatdan o'tish"
-              >
-                🔐 Kirish / Roʻyxat
-              </button>
-            )}
+            <button
+              onClick={handleLogout}
+              className="btn-auth-logout"
+              title="Akkauntdan chiqish"
+            >
+              {t.logout}
+            </button>
           </div>
         </div>
 
         {/* Xatolik ogohlantirishi */}
         {dbError && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid #ef4444',
-            color: '#f87171',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '13px',
-            marginBottom: '20px',
-            lineHeight: '1.4'
-          }}>
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid #ef4444',
+              color: '#f87171',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              marginBottom: '20px',
+              lineHeight: '1.4'
+            }}
+          >
             ⚠️ <b>Diqqat:</b> {dbError}
           </div>
         )}
@@ -652,22 +968,40 @@ function App() {
         <header className="header-top">
           <div className="header-title-box">
             <h1>
-              <span>🚀</span> Task Flow
+              <span>🚀</span> {t.appTitle}
             </h1>
             <div className="header-date">{todayFormatted}</div>
           </div>
 
           <div className="header-actions">
-            <select
-              value={lang}
-              onChange={e => setLang(e.target.value)}
-              className="custom-select lang-select"
-              title="Til / Language"
-            >
-              <option value="uz">🇺🇿 UZ</option>
-              <option value="ru">🇷🇺 RU</option>
-              <option value="en">🇬🇧 EN</option>
-            </select>
+            {/* 3 ta tilni almashtirish tugmasi */}
+            <div className="lang-switcher header-lang">
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'uz' ? 'active' : ''}`}
+                onClick={() => handleLangChange('uz')}
+                title="Oʻzbekcha"
+              >
+                🇺🇿 UZ
+              </button>
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'ru' ? 'active' : ''}`}
+                onClick={() => handleLangChange('ru')}
+                title="Русский"
+              >
+                🇷🇺 RU
+              </button>
+              <button
+                type="button"
+                className={`lang-pill ${lang === 'en' ? 'active' : ''}`}
+                onClick={() => handleLangChange('en')}
+                title="English"
+              >
+                🇬🇧 EN
+              </button>
+            </div>
+
             <button
               onClick={() => setSoundEnabled(prev => !prev)}
               className="icon-btn"
@@ -690,7 +1024,7 @@ function App() {
           <div className="timer-widget">
             <div className="timer-header">
               <div className="timer-task-name">
-                <span>🎯 Fokus:</span> {focusTask.text}
+                <span>{t.focusPrefix}</span> {focusTask.text}
               </div>
               <div className="timer-mode-pills">
                 <button
@@ -701,7 +1035,7 @@ function App() {
                   }}
                   className={`mode-pill ${timerMode === 'stopwatch' ? 'active' : ''}`}
                 >
-                  ⏱️ Sekundnomer
+                  {t.modeStopwatch}
                 </button>
                 <button
                   onClick={() => {
@@ -711,7 +1045,7 @@ function App() {
                   }}
                   className={`mode-pill ${timerMode === 'pomodoro' ? 'active' : ''}`}
                 >
-                  🍅 Pomodoro
+                  {t.modePomodoro}
                 </button>
               </div>
             </div>
@@ -723,10 +1057,10 @@ function App() {
                 onClick={() => setIsTimerRunning(prev => !prev)}
                 className="btn-timer-primary"
               >
-                {isTimerRunning ? '⏸ Toʻxtatish' : '▶️ Boshlash'}
+                {isTimerRunning ? t.btnTimerPause : t.btnTimerStart}
               </button>
               <button onClick={saveFocusedTime} className="btn-timer-secondary">
-                💾 Vaqtni saqlash
+                {t.btnTimerSave}
               </button>
               <button
                 onClick={() => {
@@ -746,7 +1080,7 @@ function App() {
         <div className="stats-banner">
           <div className="stats-info">
             <div>
-              <div className="stats-title">Kunlik Natija</div>
+              <div className="stats-title">{t.dailyResult}</div>
               <div className="stats-motivation">{motivationText}</div>
             </div>
             <div className="stats-percent">{progressPercent}%</div>
@@ -763,11 +1097,11 @@ function App() {
               type="text"
               value={newTodo}
               onChange={e => setNewTodo(e.target.value)}
-              placeholder="Qanday rejangiz bor? Masalan: Loyiha hisobotini topshirish..."
+              placeholder={t.inputPlaceholder}
               className="task-input"
             />
             <button type="submit" className="btn-add">
-              <span>+</span> Qoʻshish
+              {t.btnAdd}
             </button>
           </div>
 
@@ -777,11 +1111,11 @@ function App() {
               onChange={e => setCategory(e.target.value)}
               className="custom-select"
             >
-              <option value="work">💼 Ish</option>
-              <option value="study">📚 Oʻqish</option>
-              <option value="personal">🏠 Shaxsiy</option>
-              <option value="urgent">⚡ Tezkor</option>
-              <option value="idea">💡 Gʻoya</option>
+              <option value="work">💼 {t.categories.work}</option>
+              <option value="study">📚 {t.categories.study}</option>
+              <option value="personal">🏠 {t.categories.personal}</option>
+              <option value="urgent">⚡ {t.categories.urgent}</option>
+              <option value="idea">💡 {t.categories.idea}</option>
             </select>
 
             <select
@@ -789,9 +1123,9 @@ function App() {
               onChange={e => setPriority(e.target.value)}
               className="custom-select"
             >
-              <option value="high">🔴 Yuqori muhimlik</option>
-              <option value="medium">🟡 Oʻrta muhimlik</option>
-              <option value="low">🟢 Oddiy</option>
+              <option value="high">🔴 {t.priorities.high}</option>
+              <option value="medium">🟡 {t.priorities.medium}</option>
+              <option value="low">🟢 {t.priorities.low}</option>
             </select>
 
             <input
@@ -799,7 +1133,7 @@ function App() {
               value={deadline}
               onChange={e => setDeadline(e.target.value)}
               className="date-input"
-              title="Vazifa bajarilish muddati"
+              title={t.deadlineTooltip}
             />
           </div>
         </form>
@@ -811,7 +1145,7 @@ function App() {
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Vazifalarni qidirish..."
+              placeholder={t.searchPlaceholder}
               className="search-input"
             />
             {searchQuery && (
@@ -826,32 +1160,36 @@ function App() {
               onClick={() => setStatusFilter('all')}
               className={`filter-tab ${statusFilter === 'all' ? 'active' : ''}`}
             >
-              Barchasi ({totalCount})
+              {t.tabAll} ({totalCount})
             </button>
             <button
               onClick={() => setStatusFilter('active')}
               className={`filter-tab ${statusFilter === 'active' ? 'active' : ''}`}
             >
-              Faol ({totalCount - completedCount})
+              {t.tabActive} ({totalCount - completedCount})
             </button>
             <button
               onClick={() => setStatusFilter('completed')}
               className={`filter-tab ${statusFilter === 'completed' ? 'active' : ''}`}
             >
-              Bajarilgan ({completedCount})
+              {t.tabCompleted} ({completedCount})
             </button>
           </div>
 
           <div className="category-chips">
-            {Object.entries(CATEGORIES).map(([key, cat]) => (
-              <button
-                key={key}
-                onClick={() => setSelectedCategory(key)}
-                className={`chip-btn ${selectedCategory === key ? 'active' : ''}`}
-              >
-                <span>{cat.icon}</span> {cat.label}
-              </button>
-            ))}
+            {Object.keys(CATEGORY_META).map(key => {
+              const meta = CATEGORY_META[key];
+              const label = t.categories[key];
+              return (
+                <button
+                  key={key}
+                  onClick={() => setSelectedCategory(key)}
+                  className={`chip-btn ${selectedCategory === key ? 'active' : ''}`}
+                >
+                  <span>{meta.icon}</span> {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -859,8 +1197,8 @@ function App() {
         {loading ? (
           <div className="state-box">
             <span className="state-icon">⏳</span>
-            <div className="state-title">Yuklanmoqda...</div>
-            <div className="state-desc">Vazifalaringiz sinxronlanmoqda</div>
+            <div className="state-title">{t.loading}</div>
+            <div className="state-desc">{t.stateSyncing}</div>
           </div>
         ) : filteredTodos.length === 0 ? (
           <div className="state-box">
@@ -869,20 +1207,29 @@ function App() {
             </span>
             <div className="state-title">
               {searchQuery
-                ? 'Hech narsa topilmadi'
+                ? t.stateSearchEmptyTitle
                 : statusFilter === 'completed'
-                ? 'Hali bajarilgan vazifalar yoʻq'
-                : 'Hech qanday vazifa yoʻq'}
+                ? t.stateCompletedEmptyTitle
+                : t.stateEmptyTitle}
             </div>
             <div className="state-desc">
-              {searchQuery ? 'Boshqa soʻz bilan qidirib koʻring' : 'Yangi vazifa kiritib boshlang'}
+              {searchQuery
+                ? t.stateSearchEmptyDesc
+                : statusFilter === 'completed'
+                ? t.stateCompletedEmptyDesc
+                : t.stateEmptyDesc}
             </div>
           </div>
         ) : (
           <ul className="todo-list">
             {filteredTodos.map(todo => {
-              const catConfig = CATEGORIES[todo.category] || CATEGORIES.work;
-              const prioConfig = PRIORITIES[todo.priority] || PRIORITIES.medium;
+              const catKey = todo.category || 'work';
+              const prioKey = todo.priority || 'medium';
+              const catMeta = CATEGORY_META[catKey] || CATEGORY_META.work;
+              const prioMeta = PRIORITY_META[prioKey] || PRIORITY_META.medium;
+              const catLabel = t.categories[catKey] || catKey;
+              const prioLabel = t.priorities[prioKey] || prioKey;
+
               const isEditing = editingId === todo.id;
               const isFocused = focusTask?.id === todo.id;
               const deadlineInfo = getDeadlineStatus(todo.deadline);
@@ -899,18 +1246,21 @@ function App() {
                 >
                   <div
                     className="priority-stripe"
-                    style={{ backgroundColor: prioConfig.color }}
+                    style={{ backgroundColor: prioMeta.color }}
                   />
 
                   <button
                     onClick={() => toggleComplete(todo)}
                     className={`checkbox-btn ${todo.completed ? 'checked' : ''}`}
-                    title={todo.completed ? 'Qaytarish' : 'Bajarildi deb belgilash'}
+                    title={todo.completed ? t.btnUndoTooltip : t.btnDoneTooltip}
                   >
                     {todo.completed ? '✓' : ''}
                   </button>
 
-                  <div className="todo-content" onClick={() => !isEditing && toggleComplete(todo)}>
+                  <div
+                    className="todo-content"
+                    onClick={() => !isEditing && toggleComplete(todo)}
+                  >
                     {isEditing ? (
                       <div className="edit-input-box" onClick={e => e.stopPropagation()}>
                         <input
@@ -925,10 +1275,10 @@ function App() {
                           autoFocus
                         />
                         <button onClick={() => saveEdit(todo.id)} className="btn-save">
-                          Saqlash
+                          {t.btnSaveEdit}
                         </button>
                         <button onClick={() => setEditingId(null)} className="btn-cancel">
-                          Bekor
+                          {t.btnCancelEdit}
                         </button>
                       </div>
                     ) : (
@@ -939,17 +1289,17 @@ function App() {
                         <div className="todo-meta">
                           <span
                             className="category-tag"
-                            style={{ color: catConfig.color, backgroundColor: catConfig.bg }}
+                            style={{ color: catMeta.color, backgroundColor: catMeta.bg }}
                           >
-                            {catConfig.icon} {catConfig.label}
+                            {catMeta.icon} {catLabel}
                           </span>
 
-                          <span className="priority-tag" style={{ color: prioConfig.color }}>
+                          <span className="priority-tag" style={{ color: prioMeta.color }}>
                             <span
                               className="priority-dot"
-                              style={{ backgroundColor: prioConfig.color }}
+                              style={{ backgroundColor: prioMeta.color }}
                             />
-                            {prioConfig.label}
+                            {prioLabel}
                           </span>
 
                           {deadlineInfo && (
@@ -959,13 +1309,13 @@ function App() {
                           )}
 
                           {todo.timeSpent > 0 && (
-                            <span className="time-spent-tag" title="Fokusda sarflangan vaqt">
+                            <span className="time-spent-tag" title="Fokus vaqti">
                               ⏱️ {formatSeconds(todo.timeSpent)}
                             </span>
                           )}
 
                           {durationText && (
-                            <span className="duration-tag" title="Vazifa qancha vaqtda bajarilgani">
+                            <span className="duration-tag">
                               ✓ {durationText}
                             </span>
                           )}
@@ -980,7 +1330,7 @@ function App() {
                         <button
                           onClick={e => startFocusOnTask(todo, e)}
                           className="action-btn focus"
-                          title="Fokus / Sekundnomer bilan ishlash"
+                          title={t.btnFocusTooltip}
                         >
                           ⏱️
                         </button>
@@ -992,14 +1342,14 @@ function App() {
                           setEditText(todo.text);
                         }}
                         className="action-btn"
-                        title="Tahrirlash"
+                        title={t.btnEditTooltip}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={e => deleteTodo(todo.id, e)}
                         className="action-btn delete"
-                        title="Oʻchirish"
+                        title={t.btnDeleteTooltip}
                       >
                         🗑️
                       </button>
@@ -1013,113 +1363,13 @@ function App() {
 
         {completedCount > 0 && (
           <footer className="footer-bar">
-            <span>{completedCount} ta vazifa bajarildi</span>
+            <span>{t.footerTasksCompleted.replace('{count}', completedCount)}</span>
             <button onClick={clearCompleted} className="btn-clear">
-              Bajarilganlarni tozalash
+              {t.btnClearCompleted}
             </button>
           </footer>
         )}
       </div>
-
-      {/* LOGIN VA RO'YXATDAN O'TISH MODAL OYNASI */}
-      {showAuthModal && (
-        <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
-          <div className="auth-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close-btn" onClick={() => setShowAuthModal(false)}>✕</button>
-
-            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
-              {authMode === 'login' ? 'Tizimga kirish' : 'Yangi hisob ochish'}
-            </h3>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Vazifalaringiz barcha qurilmalarda saqlanadi
-            </p>
-
-            <div className="auth-tabs">
-              <button
-                type="button"
-                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthMode('login');
-                  setAuthError('');
-                }}
-              >
-                Kirish
-              </button>
-              <button
-                type="button"
-                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
-                onClick={() => {
-                  setAuthMode('register');
-                  setAuthError('');
-                }}
-              >
-                Roʻyxatdan oʻtish
-              </button>
-            </div>
-
-            {authError && <div className="auth-error-alert">⚠️ {authError}</div>}
-
-            <form onSubmit={handleEmailAuth} className="auth-form">
-              {authMode === 'register' && (
-                <div className="auth-field">
-                  <label className="auth-label">Ismingiz</label>
-                  <input
-                    type="text"
-                    value={authName}
-                    onChange={e => setAuthName(e.target.value)}
-                    placeholder="Masalan: Javohir"
-                    className="auth-input"
-                  />
-                </div>
-              )}
-
-              <div className="auth-field">
-                <label className="auth-label">Email manzilingiz</label>
-                <input
-                  type="email"
-                  required
-                  value={authEmail}
-                  onChange={e => setAuthEmail(e.target.value)}
-                  placeholder="nomi@email.com"
-                  className="auth-input"
-                />
-              </div>
-
-              <div className="auth-field">
-                <label className="auth-label">Parol (kamida 6 ta belgi)</label>
-                <input
-                  type="password"
-                  required
-                  value={authPassword}
-                  onChange={e => setAuthPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="auth-input"
-                />
-              </div>
-
-              <button type="submit" disabled={authLoading} className="btn-auth-submit">
-                {authLoading ? 'Yuklanmoqda...' : authMode === 'login' ? 'Kirish' : 'Hisob yaratish'}
-              </button>
-            </form>
-
-            <div className="auth-divider">yoki</div>
-
-            <button type="button" onClick={handleGoogleLogin} className="btn-modal-google">
-              <span>🌐</span> Google bilan davom etish
-            </button>
-
-            <div style={{ textAlign: 'center' }}>
-              <button
-                type="button"
-                onClick={() => setShowAuthModal(false)}
-                className="btn-modal-guest"
-              >
-                Mehmon sifatida davom etish (Kirish shart emas)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

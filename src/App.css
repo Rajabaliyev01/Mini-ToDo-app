@@ -1,54 +1,54 @@
-/* Modern ToDo App Theme Variables */
+/* Modern ToDo App Theme Variables - Eye-comfort Soft Blue Gradient */
 :root {
-  --bg-gradient: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #ede9fe 100%);
-  --app-bg: rgba(255, 255, 255, 0.90);
-  --card-border: rgba(255, 255, 255, 0.85);
-  --text-main: #1e293b;
-  --text-muted: #64748b;
+  --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 45%, #e0e7ff 100%);
+  --app-bg: rgba(255, 255, 255, 0.92);
+  --card-border: rgba(255, 255, 255, 0.9);
+  --text-main: #0f172a;
+  --text-muted: #475569;
   --text-dim: #94a3b8;
   --item-bg: #ffffff;
-  --item-hover: #f0f7ff;
-  --item-border: #bfdbfe;
-  --input-bg: #f0f7ff;
+  --item-hover: #f0f9ff;
+  --item-border: #bae6fd;
+  --input-bg: #f8fafc;
   --input-border: #93c5fd;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-glow: rgba(59, 130, 246, 0.25);
-  --success: #10b981;
-  --danger: #ef4444;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --warning: #f59e0b;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --shadow-lg: 0 20px 40px -15px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.08);
-  --shadow-sm: 0 4px 6px -1px rgba(59, 130, 246, 0.08);
-  --stat-card-bg: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  --timer-bg: linear-gradient(135deg, #1e3a5f 0%, #1e1b4b 100%);
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-glow: rgba(37, 99, 235, 0.22);
+  --success: #059669;
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.12);
+  --shadow-lg: 0 20px 45px -15px rgba(37, 99, 235, 0.14), 0 0 25px rgba(56, 189, 248, 0.1);
+  --shadow-sm: 0 4px 6px -1px rgba(37, 99, 235, 0.06);
+  --stat-card-bg: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+  --timer-bg: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
 [data-theme='dark'] {
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e1e2f 100%);
-  --app-bg: rgba(30, 41, 59, 0.78);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --text-main: #f8fafc;
-  --text-muted: #cbd5e1;
+  --bg-gradient: linear-gradient(135deg, #0b1329 0%, #172554 50%, #0f172a 100%);
+  --app-bg: rgba(15, 23, 42, 0.85);
+  --card-border: rgba(56, 189, 248, 0.15);
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
   --text-dim: #64748b;
-  --item-bg: rgba(15, 23, 42, 0.65);
-  --item-hover: rgba(30, 41, 59, 0.95);
-  --item-border: rgba(255, 255, 255, 0.08);
-  --input-bg: rgba(15, 23, 42, 0.8);
-  --input-border: rgba(255, 255, 255, 0.15);
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --primary-glow: rgba(129, 140, 248, 0.35);
+  --item-bg: rgba(30, 41, 59, 0.7);
+  --item-hover: rgba(30, 58, 138, 0.35);
+  --item-border: rgba(56, 189, 248, 0.12);
+  --input-bg: rgba(15, 23, 42, 0.85);
+  --input-border: rgba(56, 189, 248, 0.25);
+  --primary: #38bdf8;
+  --primary-hover: #0ea5e9;
+  --primary-glow: rgba(56, 189, 248, 0.35);
   --success: #34d399;
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.15);
   --warning: #fbbf24;
   --warning-bg: rgba(251, 191, 36, 0.15);
-  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.15);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
-  --stat-card-bg: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --timer-bg: linear-gradient(135deg, #090d16 0%, #17182c 100%);
+  --shadow-lg: 0 20px 45px -15px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.15);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --stat-card-bg: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+  --timer-bg: linear-gradient(135deg, #020617 0%, #0f172a 100%);
 }
 
 .app-wrapper {
@@ -1158,7 +1158,117 @@
   box-shadow: 0 2px 8px var(--primary-glow);
 }
 
-.btn-auth-open:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
+/* Language Switcher Styling */
+.lang-switcher {
+  display: inline-flex;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
 }
+
+.lang-pill {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-pill:hover {
+  color: var(--text-main);
+}
+
+.lang-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px var(--primary-glow);
+}
+
+/* Dedicated Auth Card (Only visible when user is not logged in) */
+.auth-page-card {
+  max-width: 480px;
+  margin: 40px auto;
+  padding: 36px 32px;
+}
+
+.auth-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.auth-theme-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+.auth-hero {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-app-logo {
+  font-size: 42px;
+  margin-bottom: 8px;
+  display: inline-block;
+  animation: floatBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes floatBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.auth-app-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, var(--text-main) 20%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-app-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.auth-box-inner {
+  background: var(--item-bg);
+  border: 1px solid var(--item-border);
+  border-radius: 20px;
+  padding: 24px 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-main-heading {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text-main);
+  text-align: center;
+}
+
+.auth-main-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
