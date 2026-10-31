@@ -1,28 +1,28 @@
 /* Modern ToDo App Theme Variables */
 :root {
-  --bg-gradient: linear-gradient(135deg, #f0f4ff 0%, #e8eaff 50%, #fdf2f8 100%);
-  --app-bg: rgba(255, 255, 255, 0.88);
-  --card-border: rgba(255, 255, 255, 0.8);
+  --bg-gradient: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #ede9fe 100%);
+  --app-bg: rgba(255, 255, 255, 0.90);
+  --card-border: rgba(255, 255, 255, 0.85);
   --text-main: #1e293b;
   --text-muted: #64748b;
   --text-dim: #94a3b8;
   --item-bg: #ffffff;
-  --item-hover: #f8fafc;
-  --item-border: #e2e8f0;
-  --input-bg: #f8fafc;
-  --input-border: #cbd5e1;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-glow: rgba(99, 102, 241, 0.25);
+  --item-hover: #f0f7ff;
+  --item-border: #bfdbfe;
+  --input-bg: #f0f7ff;
+  --input-border: #93c5fd;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-glow: rgba(59, 130, 246, 0.25);
   --success: #10b981;
   --danger: #ef4444;
   --danger-bg: rgba(239, 68, 68, 0.1);
   --warning: #f59e0b;
   --warning-bg: rgba(245, 158, 11, 0.12);
-  --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 20px rgba(99, 102, 241, 0.05);
-  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  --stat-card-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --timer-bg: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  --shadow-lg: 0 20px 40px -15px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.08);
+  --shadow-sm: 0 4px 6px -1px rgba(59, 130, 246, 0.08);
+  --stat-card-bg: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  --timer-bg: linear-gradient(135deg, #1e3a5f 0%, #1e1b4b 100%);
 }
 
 [data-theme='dark'] {

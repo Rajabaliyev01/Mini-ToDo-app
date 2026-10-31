@@ -173,8 +173,82 @@ function App() {
   const [dbError, setDbError] = useState(null);
 
   // Auth Modal holati
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
   const [authMode, setAuthMode] = useState('login'); // 'login' yoki 'register'
+  const [lang, setLang] = useState('uz'); // 'uz', 'ru', 'en'
+  const translations = {
+    uz: {
+      login: 'Kirish',
+      register: 'Ro\'yxatdan\'o\'tish',
+      emailPlaceholder: "Email kiriting...",
+      passwordPlaceholder: "Parol kiriting...",
+      namePlaceholder: "Ism (ixtiyoriy)",
+      logout: 'Chiqish 🚪',
+      authButton: '🔐 Kirish / Ro\'yxat',
+      addTask: '+ Qo\'shish',
+      placeholderTask: "Qanday rejangiz bor? Masalan: Loyiha hisobotini topshirish...",
+      categoryWork: '💼 Ish',
+      categoryStudy: "📚 O'qish",
+      categoryPersonal: '🏠 Shaxsiy',
+      categoryUrgent: '⚡ Tezkor',
+      categoryIdea: "💡 G'oya",
+      priorityHigh: '🔴 Yuqori',
+      priorityMedium: "🟡 O'rta",
+      priorityLow: '🟢 Oddiy',
+      searchPlaceholder: 'Vazifalarni qidirish...',
+      all: 'Barchasi',
+      active: 'Faol',
+      completed: 'Bajarilgan'
+    },
+    ru: {
+      login: 'Войти',
+      register: 'Регистрация',
+      emailPlaceholder: "Введите email...",
+      passwordPlaceholder: "Введите пароль...",
+      namePlaceholder: "Имя (по желанию)",
+      logout: 'Выйти 🚪',
+      authButton: '🔐 Войти / Регистрация',
+      addTask: '+ Добавить',
+      placeholderTask: "Какая у вас задача? Например: сдать отчет...",
+      categoryWork: '💼 Работа',
+      categoryStudy: "📚 Учеба",
+      categoryPersonal: '🏠 Личное',
+      categoryUrgent: '⚡ Срочно',
+      categoryIdea: "💡 Идея",
+      priorityHigh: '🔴 Высокий',
+      priorityMedium: "🟡 Средний",
+      priorityLow: '🟢 Низкий',
+      searchPlaceholder: 'Поиск задач...',
+      all: 'Все',
+      active: 'Активные',
+      completed: 'Выполненные'
+    },
+    en: {
+      login: 'Login',
+      register: 'Register',
+      emailPlaceholder: "Enter email...",
+      passwordPlaceholder: "Enter password...",
+      namePlaceholder: "Name (optional)",
+      logout: 'Logout 🚪',
+      authButton: '🔐 Sign In / Register',
+      addTask: '+ Add',
+      placeholderTask: "What's your plan? e.g., submit project report...",
+      categoryWork: '💼 Work',
+      categoryStudy: "📚 Study",
+      categoryPersonal: '🏠 Personal',
+      categoryUrgent: '⚡ Urgent',
+      categoryIdea: "💡 Idea",
+      priorityHigh: '🔴 High',
+      priorityMedium: "🟡 Medium",
+      priorityLow: '🟢 Low',
+      searchPlaceholder: 'Search tasks...',
+      all: 'All',
+      active: 'Active',
+      completed: 'Completed'
+    }
+  };
+  const t = (key) => translations[lang][key] || key;
+
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authName, setAuthName] = useState('');
@@ -584,6 +658,16 @@ function App() {
           </div>
 
           <div className="header-actions">
+            <select
+              value={lang}
+              onChange={e => setLang(e.target.value)}
+              className="custom-select lang-select"
+              title="Til / Language"
+            >
+              <option value="uz">🇺🇿 UZ</option>
+              <option value="ru">🇷🇺 RU</option>
+              <option value="en">🇬🇧 EN</option>
+            </select>
             <button
               onClick={() => setSoundEnabled(prev => !prev)}
               className="icon-btn"
