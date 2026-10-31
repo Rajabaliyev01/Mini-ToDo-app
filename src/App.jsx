@@ -5,7 +5,10 @@ import {
   googleProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile
 } from './firebase';
 import {
   collection,
@@ -169,6 +172,15 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [dbError, setDbError] = useState(null);
 
+  // Auth Modal holati
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' yoki 'register'
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+
   // Form maydonlari
   const [newTodo, setNewTodo] = useState('');
   const [category, setCategory] = useState('work');
@@ -224,17 +236,58 @@ function App() {
     return () => unsubscribeAuth();
   }, []);
 
+  // Email & Parol bilan Kirish / Ro'yxatdan o'tish
+  const handleEmailAuth = async e => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+
+    try {
+      if (authMode === 'register') {
+        if (!authEmail || !authPassword) {
+          throw new Error('Email va parolni kiriting');
+        }
+        if (authPassword.length < 6) {
+          throw new Error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
+        }
+        const userCred = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+        if (authName.trim()) {
+          await updateProfile(userCred.user, { displayName: authName.trim() });
+        }
+      } else {
+        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      }
+      setShowAuthModal(false);
+      setAuthEmail('');
+      setAuthPassword('');
+      setAuthName('');
+    } catch (err) {
+      let msg = err.message;
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        msg = "Email yoki parol noto'g'ri kiritildi";
+      } else if (err.code === 'auth/email-already-in-use') {
+        msg = "Bu email allaqachon ro'yxatdan o'tgan";
+      } else if (err.code === 'auth/invalid-email') {
+        msg = "Email formati noto'g'ri";
+      }
+      setAuthError(msg);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   // Google bilan kirish
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
+      setShowAuthModal(false);
     } catch (err) {
       console.error('Google bilan kirishda xatolik:', err);
-      alert('Google bilan kirish uchun Firebase Console-da Google Authentication-ni yoqishingiz kerak:\n' + err.message);
+      setAuthError('Google orqali kirishda xatolik: ' + err.message);
     }
   };
 
-  // Tizimdan chiqish
+  // Tizimdan chiqish (Mehmon rejimiga qaytish)
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -244,7 +297,6 @@ function App() {
   };
 
   // 1. Real-time Firebase Listener
-  // Barcha vazifalarni oladi va foydalanuvchiga moslarini ko'rsatadi
   useEffect(() => {
     const todosCol = collection(db, 'todos');
     const unsubscribe = onSnapshot(
@@ -273,7 +325,7 @@ function App() {
         console.error('Firestore xatosi:', error);
         setLoading(false);
         if (error.message && error.message.includes('permission-denied')) {
-          setDbError('Firebase Firestore bazasi hali yoqilmagan yoki qoidalar bloklangan. Iltimos Firebase konsolida bazani faollashtiring.');
+          setDbError('Firebase Firestore bazasi hali yoqilmagan yoki qoidalar bloklangan.');
         } else {
           setDbError(error.message);
         }
@@ -355,6 +407,7 @@ function App() {
         completed: false,
         userId: activeUserId,
         userEmail: currentUser?.email || 'Mehmon',
+        userName: currentUser?.displayName || 'Mehmon',
         timeSpent: 0,
         createdAt: serverTimestamp()
       });
@@ -413,7 +466,7 @@ function App() {
     }
   };
 
-  // 6. Bajarilganlarni tozalash (Bulk action)
+  // 6. Bajarilganlarni tozalash
   const clearCompleted = async () => {
     const completedList = todos.filter(t => t.completed);
     if (completedList.length === 0) return;
@@ -472,14 +525,14 @@ function App() {
               {currentUser?.photoURL ? (
                 <img src={currentUser.photoURL} alt="Avatar" />
               ) : (
-                <span>👤</span>
+                <span>{currentUser ? '👤' : '🕶️'}</span>
               )}
             </div>
             <div>
               <div className="user-meta-name">
-                {currentUser?.displayName || 'Mehmon foydalanuvchi'}
+                {currentUser ? (currentUser.displayName || currentUser.email) : 'Mehmon rejimi'}
                 <span className="user-badge">
-                  {currentUser ? 'Google' : 'ID: ' + guestId.substring(0, 8)}
+                  {currentUser ? 'Akkaunt' : 'Guest: ' + guestId.substring(0, 6)}
                 </span>
               </div>
             </div>
@@ -487,22 +540,25 @@ function App() {
 
           <div className="user-actions">
             {currentUser ? (
-              <button onClick={handleLogout} className="btn-auth-logout" title="Akkauntdan chiqish">
+              <button onClick={handleLogout} className="btn-auth-logout" title="Akkauntdan chiqish (Mehmon rejimiga o'tish)">
                 Chiqish 🚪
               </button>
             ) : (
               <button
-                onClick={handleGoogleLogin}
-                className="btn-auth-google"
-                title="Vazifalaringizni doimiy saqlash uchun kiring"
+                onClick={() => {
+                  setAuthError('');
+                  setShowAuthModal(true);
+                }}
+                className="btn-auth-open"
+                title="Kirish yoki Ro'yxatdan o'tish"
               >
-                <span>🌐</span> Google bilan kirish
+                🔐 Kirish / Roʻyxat
               </button>
             )}
           </div>
         </div>
 
-        {/* Xatolik ogohlantirishi (agar baza yoqilmagan bo'lsa) */}
+        {/* Xatolik ogohlantirishi */}
         {dbError && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.15)',
@@ -880,6 +936,106 @@ function App() {
           </footer>
         )}
       </div>
+
+      {/* LOGIN VA RO'YXATDAN O'TISH MODAL OYNASI */}
+      {showAuthModal && (
+        <div className="modal-overlay" onClick={() => setShowAuthModal(false)}>
+          <div className="auth-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setShowAuthModal(false)}>✕</button>
+
+            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
+              {authMode === 'login' ? 'Tizimga kirish' : 'Yangi hisob ochish'}
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+              Vazifalaringiz barcha qurilmalarda saqlanadi
+            </p>
+
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={`auth-tab ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('login');
+                  setAuthError('');
+                }}
+              >
+                Kirish
+              </button>
+              <button
+                type="button"
+                className={`auth-tab ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthError('');
+                }}
+              >
+                Roʻyxatdan oʻtish
+              </button>
+            </div>
+
+            {authError && <div className="auth-error-alert">⚠️ {authError}</div>}
+
+            <form onSubmit={handleEmailAuth} className="auth-form">
+              {authMode === 'register' && (
+                <div className="auth-field">
+                  <label className="auth-label">Ismingiz</label>
+                  <input
+                    type="text"
+                    value={authName}
+                    onChange={e => setAuthName(e.target.value)}
+                    placeholder="Masalan: Javohir"
+                    className="auth-input"
+                  />
+                </div>
+              )}
+
+              <div className="auth-field">
+                <label className="auth-label">Email manzilingiz</label>
+                <input
+                  type="email"
+                  required
+                  value={authEmail}
+                  onChange={e => setAuthEmail(e.target.value)}
+                  placeholder="nomi@email.com"
+                  className="auth-input"
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Parol (kamida 6 ta belgi)</label>
+                <input
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={e => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="auth-input"
+                />
+              </div>
+
+              <button type="submit" disabled={authLoading} className="btn-auth-submit">
+                {authLoading ? 'Yuklanmoqda...' : authMode === 'login' ? 'Kirish' : 'Hisob yaratish'}
+              </button>
+            </form>
+
+            <div className="auth-divider">yoki</div>
+
+            <button type="button" onClick={handleGoogleLogin} className="btn-modal-google">
+              <span>🌐</span> Google bilan davom etish
+            </button>
+
+            <div style={{ textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                className="btn-modal-guest"
+              >
+                Mehmon sifatida davom etish (Kirish shart emas)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

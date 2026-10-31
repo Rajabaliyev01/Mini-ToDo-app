@@ -6,7 +6,10 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
-  signInAnonymously
+  signInAnonymously,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -24,4 +27,12 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export { signInWithPopup, signOut, onAuthStateChanged, signInAnonymously };
+export {
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  signInAnonymously,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile
+};
