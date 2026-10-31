@@ -13,13 +13,13 @@ import {
 } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyC5KrOFSlwk8Vj_mfCrAXNwWEzAyiFAd6M",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "todo-3b5b8.firebaseapp.com",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "todo-3b5b8",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "todo-3b5b8.firebasestorage.app",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "991713514302",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:991713514302:web:255db188e9f82edd7a926f",
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-4PZPY3RRKB"
 };
 
 // Firebase'ni ishga tushirish
