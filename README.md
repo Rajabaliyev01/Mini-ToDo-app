@@ -18,6 +18,22 @@
 
 ---
 
+## 📸 Skrinshotlar / Screenshots
+
+### 1. 🔐 Login Sahifasi — Dark Mode
+![Task Flow Login](public/screenshots/Screenshot%202026-11-07%20at%2012.35.10.png)
+
+### 2. 🌞 Asosiy Dashboard — Light Mode
+![Task Flow Dashboard Light](public/screenshots/Screenshot%202026-11-07%20at%2012.35.37.png)
+
+### 3. 🌙 Asosiy Dashboard — Dark Mode
+![Task Flow Dashboard Dark](public/screenshots/Screenshot%202026-11-07%20at%2012.35.46.png)
+
+### 4. ✅ Vazifa Qo'shish va Boshqarish
+![Task Flow Add Task](public/screenshots/Screenshot%202026-11-07%20at%2012.36.33.png)
+
+---
+
 ## ✨ Asosiy Imkoniyatlar
 
 | Xususiyat | Tavsif |
